@@ -32,7 +32,7 @@ jobs:
           python-version: '3.12'
       - run: pip install -e '.[test]'
       - run: ruff check .
-      - run: python -m scripts.prepare_plugin
+      - run: make sqlc-generate
+      - run: git diff --exit-code
       - run: python -m scripts.codegen validate
-      - run: python -m scripts.codegen check
       - run: pytest -q

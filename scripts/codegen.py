@@ -41,40 +41,8 @@ def validate():
         subprocess.run([sqlc_binary(), "compile", "-f", str(config)], check=True)
 
 
-def same_tree(left: Path, right: Path):
-    if not left.is_dir() or not right.is_dir():
-        return False
-
-    # Exclude Python runtime caches, never source files (including untracked output).
-    def files(root):
-        return {
-            p.relative_to(root)
-            for p in root.rglob("*")
-            if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"
-        }
-
-    paths = files(left)
-    return (
-        bool(paths)
-        and paths == files(right)
-        and all((left / p).read_bytes() == (right / p).read_bytes() for p in paths)
-    )
-
-
-def check_generated():
-    with tempfile.TemporaryDirectory() as directory:
-        work = Path(directory)
-        for folder in [SCHEMA, QUERIES]:
-            relative = folder.relative_to(ROOT)
-            shutil.copytree(folder, work / relative)
-        shutil.copy(ROOT / "sqlc.yaml", work / "sqlc.yaml")
-        (work / ".tools").mkdir()
-        shutil.copy(ROOT / ".tools/sqlc-gen-better-python.wasm", work / ".tools")
-        subprocess.run([sqlc_binary(), "generate"], cwd=work, check=True)
-        if not same_tree(GENERATED, work / GENERATED.relative_to(ROOT)):
-            raise SystemExit(
-                "Generated output missing or stale; run make generate and review the diff"
-            )
+def generate():
+    subprocess.run([sqlc_binary(), "generate"], cwd=ROOT, check=True)
 
 
 if __name__ == "__main__":
@@ -82,7 +50,7 @@ if __name__ == "__main__":
 
     if sys.argv[1:] == ["validate"]:
         validate()
-    elif sys.argv[1:] == ["check"]:
-        check_generated()
+    elif sys.argv[1:] == ["generate"]:
+        generate()
     else:
-        raise SystemExit("usage: python -m scripts.codegen validate|check")
+        raise SystemExit("usage: python -m scripts.codegen validate|generate")

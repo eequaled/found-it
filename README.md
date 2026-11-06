@@ -16,8 +16,8 @@ The generator is a pinned dependency, not vendored source:
 generation/queries/health.sql          handwritten fixture query
 generation/schema/*.sql                minimal existing schema fixture
 generation/generated/                  generated asyncpg adapter, checked in
-scripts/prepare_plugin.py              fetch/verify the pinned WASM artifact
-scripts/codegen.py                     validate SQL and check generated drift
+scripts/prepare_plugin.py              download/verify the pinned WASM artifact
+scripts/codegen.py                     validate SQL and run sqlc generate
 tests/test_toolchain.py                exercise the adapter against PostgreSQL
 ```
 
@@ -28,8 +28,8 @@ the pinned generator and asyncpg output work end to end.
 ## Requirements
 
 Python 3.12+ and PostgreSQL 16 for the generated-adapter test. The generator
-artifact is downloaded into the ignored `.tools/` directory; upstream source is
-cloned into the ignored `references/` directory.
+artifact is downloaded as a single WASM file into the ignored `.tools/`
+directory; the upstream repository is not cloned or vendored.
 
 ## Commands
 
@@ -38,10 +38,10 @@ python3.12 -m venv .venv
 . .venv/bin/activate
 make install
 
-make generate          # fetch/verify the WASM artifact, then run sqlc generate
+make sqlc-generate     # download/verify the WASM artifact, then run sqlc generate
 make validate          # sqlc compile against the fixture
-make check-generated   # regenerate independently and reject drift
-make test              # validate, check drift, lint and run tests
+make check-generated   # regenerate and reject any git diff in generated output
+make test              # validate, regenerate, lint and run tests
 ```
 
 `make test` needs a reachable PostgreSQL 16 database:
@@ -57,7 +57,6 @@ not edited by hand.
 ## Third-party notices
 
 `sqlc-gen-better-python` is MIT-licensed, copyright 2025-present Rayakame. It is
-not vendored; `scripts/prepare_plugin.py` verifies its pinned source revision and
-the SHA-256 digest of the upstream test fixture before copying the WASM artifact
-into the ignored build directory. See the upstream repository for the full
-license text.
+not vendored; `scripts/prepare_plugin.py` downloads the single WASM fixture at
+the pinned revision and verifies its SHA-256 digest before writing it to the
+ignored build directory. See the upstream repository for the full license text.
